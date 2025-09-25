@@ -6,10 +6,9 @@ jobs:
   notify:
     runs-on: ubuntu-latest
 
-    if: github.event.name == 'pull_request'
-
     steps:
       - name: Post Success comment on PR
+        if: github.event.pull_request != 'null'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
