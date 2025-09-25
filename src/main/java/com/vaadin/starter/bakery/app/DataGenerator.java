@@ -30,6 +30,13 @@ import com.vaadin.starter.bakery.backend.repositories.PickupLocationRepository;
 import com.vaadin.starter.bakery.backend.repositories.ProductRepository;
 import com.vaadin.starter.bakery.backend.repositories.UserRepository;
 
+/**
+ * Generates demo data (users, products, pickup locations, and orders)
+ * when the database is empty.
+ * <p>
+ * This class is registered as a Spring component and runs
+ * {@link #loadData()} automatically after the Spring context is initialized.
+ */
 @SpringComponent
 public class DataGenerator implements HasLogger {
 
@@ -53,6 +60,16 @@ public class DataGenerator implements HasLogger {
 	private PickupLocationRepository pickupLocationRepository;
 	private PasswordEncoder passwordEncoder;
 
+
+    /**
+     * Constructs the data generator with required repositories and services.
+     *
+     * @param orderRepository          repository for orders
+     * @param userRepository           repository for users
+     * @param productRepository        repository for products
+     * @param pickupLocationRepository repository for pickup locations
+     * @param passwordEncoder          encoder for user passwords
+     */
 	@Autowired
 	public DataGenerator(OrderRepository orderRepository, UserRepository userRepository,
 			ProductRepository productRepository, PickupLocationRepository pickupLocationRepository,
@@ -95,6 +112,13 @@ public class DataGenerator implements HasLogger {
 		getLogger().info("Generated demo data");
 	}
 
+
+    /**
+     * Populates a {@link Customer} entity with random data such as
+     * full name and phone number.
+     *
+     * @param customer the customer to fill with random demo data
+     */
 	private void fillCustomer(Customer customer) {
 		String first = getRandom(FIRST_NAME);
 		String last = getRandom(LAST_NAME);
@@ -105,10 +129,25 @@ public class DataGenerator implements HasLogger {
 		}
 	}
 
+    /**
+     * Generates a random phone number using the format +1-555-XXXX.
+     *
+     * @return a randomly generated phone number
+     */
 	private String getRandomPhone() {
 		return "+1-555-" + String.format("%04d", random.nextInt(10000));
 	}
 
+
+    /**
+     * Creates multiple demo orders distributed across a time range.
+     *
+     * @param orderRepo               repository used to persist the orders
+     * @param productSupplier         supplier of demo products
+     * @param pickupLocationSupplier  supplier of pickup locations
+     * @param barista                 user with the BARISTA role
+     * @param baker                   user with the BAKER role
+     */
 	private void createOrders(OrderRepository orderRepo, Supplier<Product> productSupplier,
 			Supplier<PickupLocation> pickupLocationSupplier, User barista, User baker) {
 		int yearsToInclude = 2;
@@ -136,6 +175,17 @@ public class DataGenerator implements HasLogger {
 		}
 	}
 
+
+    /**
+     * Creates a single demo order with random customer, products, and history.
+     *
+     * @param productSupplier        supplier of demo products
+     * @param pickupLocationSupplier supplier of pickup locations
+     * @param barista                user who can change the order state
+     * @param baker                  user who can change the order state
+     * @param dueDate                date when the order is due
+     * @return a randomly generated {@link Order}
+     */
 	private Order createOrder(Supplier<Product> productSupplier, Supplier<PickupLocation> pickupLocationSupplier,
 			User barista, User baker, LocalDate dueDate) {
 		Order order = new Order(barista);
@@ -172,6 +222,17 @@ public class DataGenerator implements HasLogger {
 		return order;
 	}
 
+
+    /**
+     * Creates a list of {@link HistoryItem} entries representing the history of a
+     * given order. The generated history simulates real-world order events
+     * (placed, confirmed, problem, ready, delivered, cancelled).
+     *
+     * @param order   the order for which the history is created
+     * @param barista the user acting as barista (used for initial and cancelled events)
+     * @param baker   the user acting as baker (used for confirmation and fulfillment events)
+     * @return a list of {@link HistoryItem} objects describing the order timeline
+     */
 	private List<HistoryItem> createOrderHistory(Order order, User barista, User baker) {
 		ArrayList<HistoryItem> history = new ArrayList<>();
 		HistoryItem item = new HistoryItem(barista, "Order placed");
@@ -215,6 +276,14 @@ public class DataGenerator implements HasLogger {
 		return history;
 	}
 
+    /**
+     * Checks if the given list of {@link OrderItem} already contains
+     * a specific {@link Product}.
+     *
+     * @param items   the list of order items to check
+     * @param product the product to search for
+     * @return {@code true} if the product is already present in the list; {@code false} otherwise
+     */
 	private boolean containsProduct(List<OrderItem> items, Product product) {
 		for (OrderItem item : items) {
 			if (item.getProduct() == product) {
@@ -224,12 +293,28 @@ public class DataGenerator implements HasLogger {
 		return false;
 	}
 
+    /**
+     * Generates a random due time for an order.
+     * <p>
+     * The time is chosen between 8:00 and 20:00 in 4-hour intervals.
+     *
+     * @return a random {@link LocalTime} representing the due time
+     */
 	private LocalTime getRandomDueTime() {
 		int time = 8 + 4 * random.nextInt(3);
 
 		return LocalTime.of(time, 0);
 	}
 
+    /**
+     * Determines a random {@link OrderState} for an order based on its due date.
+     * <p>
+     * Past dates are more likely to be delivered or cancelled,
+     * while future dates are more likely to be new or have problems.
+     *
+     * @param due the due date of the order
+     * @return a randomly selected {@link OrderState}
+     */
 	private OrderState getRandomState(LocalDate due) {
 		LocalDate today = LocalDate.now();
 		LocalDate tomorrow = today.plusDays(1);
@@ -270,10 +355,24 @@ public class DataGenerator implements HasLogger {
 		}
 	}
 
+    /**
+     * Returns a random element from the provided array.
+     *
+     * @param <T>   the type of elements in the array
+     * @param array the array to pick from
+     * @return a randomly selected element
+     */
 	private <T> T getRandom(T[] array) {
 		return array[random.nextInt(array.length)];
 	}
 
+    /**
+     * Creates and persists demo pickup locations, returning a supplier
+     * that randomly picks one of them.
+     *
+     * @param pickupLocationRepository repository for storing pickup locations
+     * @return a supplier providing random {@link PickupLocation} instances
+     */
 	private Supplier<PickupLocation> createPickupLocations(PickupLocationRepository pickupLocationRepository) {
 		List<PickupLocation> pickupLocations = Arrays.asList(
 				pickupLocationRepository.save(createPickupLocation("Store")),
@@ -281,12 +380,26 @@ public class DataGenerator implements HasLogger {
 		return () -> pickupLocations.get(random.nextInt(pickupLocations.size()));
 	}
 
+    /**
+     * Creates a new {@link PickupLocation} with the given name.
+     *
+     * @param name the display name of the pickup location
+     * @return a newly created {@link PickupLocation}
+     */
 	private PickupLocation createPickupLocation(String name) {
 		PickupLocation store = new PickupLocation();
 		store.setName(name);
 		return store;
 	}
 
+    /**
+     * Creates and persists demo products and returns a supplier that picks
+     * a product with a weighted random distribution.
+     *
+     * @param productsRepo   repository for storing products
+     * @param numberOfItems  how many products to create
+     * @return a supplier providing random {@link Product} instances
+     */
 	private Supplier<Product> createProducts(ProductRepository productsRepo, int numberOfItems) {
 		List<Product> products  = new ArrayList<>();
 		for (int i = 0; i < numberOfItems; i++) {
@@ -307,6 +420,12 @@ public class DataGenerator implements HasLogger {
 		};
 	}
 
+    /**
+     * Generates a random product name by combining one or two fillings
+     * with a product type (e.g., "Strawberry Chocolate Cake").
+     *
+     * @return a randomly generated product name
+     */
 	private String getRandomProductName() {
 		String firstFilling = getRandom(FILLING);
 		String name;
@@ -325,21 +444,37 @@ public class DataGenerator implements HasLogger {
 		return name;
 	}
 
+    /**
+     * Creates and persists a demo user with the {@code BAKER} role.
+     *
+     * @param userRepository repository for storing users
+     * @param passwordEncoder encoder for the password
+     * @return the created {@link User}
+     */
 	private User createBaker(UserRepository userRepository, PasswordEncoder passwordEncoder) {
 		return userRepository.save(
 				createUser("baker@vaadin.com", "Heidi", "Carter", passwordEncoder.encode("baker"), Role.BAKER, false));
 	}
 
+    /**
+     * Creates and persists a demo user with the {@code BARISTA} role.
+     */
 	private User createBarista(UserRepository userRepository, PasswordEncoder passwordEncoder) {
 		return userRepository.save(createUser("barista@vaadin.com", "Malin", "Castro",
 				passwordEncoder.encode("barista"), Role.BARISTA, true));
 	}
 
+    /**
+     * Creates and persists a demo user with the {@code ADMIN} role.
+     */
 	private User createAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
 		return userRepository.save(
 				createUser("admin@vaadin.com", "Göran", "Rich", passwordEncoder.encode("admin"), Role.ADMIN, true));
 	}
 
+    /**
+     * Creates additional demo users that can be safely deleted for testing.
+     */
 	private void createDeletableUsers(UserRepository userRepository, PasswordEncoder passwordEncoder) {
 		userRepository.save(
 				createUser("peter@vaadin.com", "Peter", "Bush", passwordEncoder.encode("peter"), Role.BARISTA, false));
@@ -347,6 +482,17 @@ public class DataGenerator implements HasLogger {
 				.save(createUser("mary@vaadin.com", "Mary", "Ocon", passwordEncoder.encode("mary"), Role.BAKER, true));
 	}
 
+    /**
+     * Helper method to create a {@link User} entity with the provided attributes.
+     *
+     * @param email       the user email
+     * @param firstName   the user first name
+     * @param lastName    the user last name
+     * @param passwordHash the encoded password
+     * @param role        the user role
+     * @param locked      whether the user account is locked
+     * @return the created {@link User}
+     */
 	private User createUser(String email, String firstName, String lastName, String passwordHash, String role,
 			boolean locked) {
 		User user = new User();
