@@ -15,5 +15,3 @@ jobs:
           body: |
             Olá ${{ github.event.pull_request.user.login }}
             O teu pullRequest foi criado com sucesso!
-
-          comment-id: pr-validation-success-comment
