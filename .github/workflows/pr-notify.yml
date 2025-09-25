@@ -6,6 +6,9 @@ jobs:
   notify:
     runs-on: ubuntu-latest
 
+    permissions:
+      pull-requests: write
+
     steps:
       - name: Post Success comment on PR
         uses: peter-evans/create-or-update-comment@v4
