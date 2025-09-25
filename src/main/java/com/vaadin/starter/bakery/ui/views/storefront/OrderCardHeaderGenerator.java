@@ -12,8 +12,23 @@ import java.util.function.Predicate;
 import com.vaadin.starter.bakery.backend.data.entity.Order;
 import com.vaadin.starter.bakery.ui.views.storefront.beans.OrderCardHeader;
 
+/**
+ * A utility class responsible for generating and associating chronological
+ * header cards (e.g., "Today", "Yesterday", "Upcoming") with a list of {@code Order} objects
+ * based on their due date.
+ * <p>
+ * This class uses a chain of time-based predicates to group orders under appropriate headers
+ * when they are processed. It prevents redundant headers for subsequent orders in the same
+ * chronological grouping.
+ */
+
 public class OrderCardHeaderGenerator {
 
+	/**
+	 * A private helper class that wraps a header and its associated matching logic.
+	 * It holds a predicate to determine if a date belongs to this header's group,
+	 * and tracks the ID of the first order selected for this header.
+	 */
 	private class HeaderWrapper {
 		private Predicate<LocalDate> matcher;
 
@@ -21,22 +36,54 @@ public class OrderCardHeaderGenerator {
 
 		private Long selected;
 
+		/**
+		 * Constructs a new HeaderWrapper.
+		 *
+		 * @param matcher The predicate used to test if a {@code LocalDate} belongs to this header's group.
+		 * @param header The {@code OrderCardHeader} to associate with matching dates.
+		 */
+
 		public HeaderWrapper(Predicate<LocalDate> matcher, OrderCardHeader header) {
 			this.matcher = matcher;
 			this.header = header;
 		}
 
+		/**
+		 * Tests if the given date matches this header's criteria.
+		 *
+		 * @param date The {@code LocalDate} to test.
+		 * @return true if the date matches, false otherwise.
+		 */
+
 		public boolean matches(LocalDate date) {
 			return matcher.test(date);
 		}
+
+		/**
+		 * Gets the ID of the first order that was grouped under this header.
+		 *
+		 * @return The ID of the selected order, or null if none has been selected yet.
+		 */
 
 		public Long getSelected() {
 			return selected;
 		}
 
+		/**
+		 * Sets the ID of the first order selected for this header.
+		 *
+		 * @param selected The ID of the order.
+		 */
+
 		public void setSelected(Long selected) {
 			this.selected = selected;
 		}
+
+		/**
+		 * Gets the header associated with this wrapper.
+		 *
+		 * @return The {@code OrderCardHeader}.
+		 */
 
 		public OrderCardHeader getHeader() {
 			return header;
@@ -89,14 +136,39 @@ public class OrderCardHeaderGenerator {
 		return secondaryHeaderFor(start) + " - " + secondaryHeaderFor(end);
 	}
 
+	/**
+	 * Retrieves the {@code OrderCardHeader} associated with a specific order ID.
+	 *
+	 * @param id The ID of the order.
+	 * @return The associated {@code OrderCardHeader}, or null if the order was not processed to have a header.
+	 */
+
 	public OrderCardHeader get(Long id) {
 		return ordersWithHeaders.get(id);
 	}
+
+	/**
+	 * Resets the internal state of the generator by recreating the chronological
+	 * header chain and clearing the map of orders with assigned headers.
+	 *
+	 * @param showPrevious If true, headers for past time periods (like "Recent" and "Yesterday") are included.
+	 */
 
 	public void resetHeaderChain(boolean showPrevious) {
 		this.headerChain = createHeaderChain(showPrevious);
 		ordersWithHeaders.clear();
 	}
+
+	/**
+	 * Processes a list of orders to assign a chronological header to the first
+	 * order found for each time period defined in the header chain.
+	 * <p>
+	 * This method iterates through the orders and assigns a header only if the
+	 * order's due date matches a header wrapper whose selected order ID is still null,
+	 * effectively ensuring that only the first order in a period gets a header.
+	 *
+	 * @param orders A list of {@code Order} objects, expected to be sorted by due date.
+	 */
 
 	public void ordersRead(List<Order> orders) {
 		Iterator<HeaderWrapper> headerIterator = headerChain.stream().filter(h -> h.getSelected() == null).iterator();
@@ -120,6 +192,14 @@ public class OrderCardHeaderGenerator {
 			ordersWithHeaders.put(order.getId(), current.getHeader());
 		}
 	}
+
+	/**
+	 * Creates the ordered list of {@code HeaderWrapper} objects that define the
+	 * chronological groupings for orders.
+	 *
+	 * @param showPrevious If true, includes headers for past days/weeks.
+	 * @return A list of {@code HeaderWrapper} forming the chronological chain.
+	 */
 
 	private List<HeaderWrapper> createHeaderChain(boolean showPrevious) {
 		List<HeaderWrapper> headerChain = new ArrayList<>();
