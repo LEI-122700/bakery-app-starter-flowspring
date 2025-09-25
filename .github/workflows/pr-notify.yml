@@ -1,0 +1,19 @@
+name: Notify PR Author
+on:
+  pull_request:
+    types: [opened, closed, synchronize]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Post Success comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Olá ${{ github.event.pull_request.user.login }}
+            O teu pullRequest foi criado com sucesso!
+
+          comment-id: pr-validation-success-comment
