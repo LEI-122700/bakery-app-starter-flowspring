@@ -38,6 +38,13 @@ import com.vaadin.starter.bakery.ui.views.storefront.StorefrontView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 
+/**
+ * The main view of the application, extending {@code AppLayout}.
+ * <p>
+ * This class handles the overall layout, navigation menu creation,
+ * access control for views, and the logout process. It also manages a
+ * global {@code ConfirmDialog} for views that implement {@code HasConfirmation}.
+ */
 public class MainView extends AppLayout {
 
 	@Autowired
@@ -45,6 +52,14 @@ public class MainView extends AppLayout {
 	private final ConfirmDialog confirmDialog = new ConfirmDialog();
 	private Tabs menu;
 	private static final String LOGOUT_SUCCESS_URL = "/" + BakeryConst.PAGE_ROOT;
+
+	/**
+	 * Initializes the view components, sets up the navigation menu,
+	 * configures the global confirmation dialog, and registers event listeners
+	 * for navbar visibility during search focus/blur.
+	 * <p>
+	 * This method is called automatically after dependency injection is complete.
+	 */
 
 	@PostConstruct
 	public void init() {
@@ -88,6 +103,15 @@ public class MainView extends AppLayout {
 		});
 	}
 
+	/**
+	 * Called after navigation to a new view.
+	 * <p>
+	 * This method closes the global {@code ConfirmDialog}, injects the dialog
+	 * into the newly navigated view if it implements {@code HasConfirmation},
+	 * and ensures the correct tab in the navigation menu is selected based
+	 * on the current view's route.
+	 */
+
 	@Override
 	protected void afterNavigation() {
 		super.afterNavigation();
@@ -108,12 +132,27 @@ public class MainView extends AppLayout {
 		}
 	}
 
+	/**
+	 * Creates the main navigation tabs component.
+	 *
+	 * @return a {@code Tabs} component containing the available menu tabs.
+	 */
+
 	private Tabs createMenuTabs() {
 		final Tabs tabs = new Tabs();
 		tabs.setOrientation(Tabs.Orientation.HORIZONTAL);
 		tabs.add(getAvailableTabs());
 		return tabs;
 	}
+
+	/**
+	 * Determines and creates the array of available navigation tabs for the user.
+	 * <p>
+	 * Access to the {@code UsersView} and {@code ProductsView} tabs is checked
+	 * using the {@code AccessAnnotationChecker}. A logout tab is always included.
+	 *
+	 * @return an array of {@code Tab} objects accessible to the current user.
+	 */
 
 	private Tab[] getAvailableTabs() {
 		final List<Tab> tabs = new ArrayList<>(4);
@@ -134,9 +173,25 @@ public class MainView extends AppLayout {
 		return tabs.toArray(new Tab[tabs.size()]);
 	}
 
+	/**
+	 * Creates a navigation tab with an icon and title that links to a specific view class.
+	 *
+	 * @param icon      The {@code VaadinIcon} to display in the tab.
+	 * @param title     The text title to display in the tab.
+	 * @param viewClass The {@code Class} of the view this tab navigates to.
+	 * @return A newly created {@code Tab} object.
+	 */
+
 	private static Tab createTab(VaadinIcon icon, String title, Class<? extends Component> viewClass) {
 		return createTab(populateLink(new RouterLink("", viewClass), icon, title));
 	}
+
+	/**
+	 * Wraps a given component in a standard styled {@code Tab}.
+	 *
+	 * @param content The component to be placed inside the tab (e.g., a {@code RouterLink} or {@code Anchor}).
+	 * @return A newly created {@code Tab} object with {@code LUMO_ICON_ON_TOP} theme variant.
+	 */
 
 	private static Tab createTab(Component content) {
 		final Tab tab = new Tab();
@@ -145,10 +200,28 @@ public class MainView extends AppLayout {
 		return tab;
 	}
 
+	/**
+	 * Creates an {@code Anchor} component styled as a logout link.
+	 *
+	 * @param contextPath The context path of the application.
+	 * @return A styled {@code Anchor} for logging out.
+	 */
+
 	private static Anchor createLogoutLink(String contextPath) {
 		final Anchor a = populateLink(new Anchor(), VaadinIcon.ARROW_RIGHT, TITLE_LOGOUT);
 		return a;
 	}
+
+	/**
+	 * Populates a component that implements {@code HasComponents} (like {@code Anchor} or {@code RouterLink})
+	 * with an icon and a title.
+	 *
+	 * @param <T>   The type of the component, which must implement {@code HasComponents}.
+	 * @param a     The component to populate.
+	 * @param icon  The {@code VaadinIcon} to add.
+	 * @param title The text title to add.
+	 * @return The populated component {@code a}.
+	 */
 
 	private static <T extends HasComponents> T populateLink(T a, VaadinIcon icon, String title) {
 		a.add(icon.create());
